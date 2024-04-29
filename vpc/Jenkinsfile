@@ -1,0 +1,38 @@
+pipeline {
+    agent {
+        node {
+            label 'agent-1'
+        }
+    }
+
+    options {
+        timeout(time: 1, unit: 'HOURS')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Initialization') {
+            steps {
+                script {
+                    // Using script block to handle multiple commands
+                    dir('vpc') {
+                        // Change to the vpc directory
+                        sh 'terraform init -reconfigure'
+                    }
+                }
+            }
+        }
+
+        stage('Running Plan Command') {
+            steps {
+                script {
+                    dir('vpc') {
+                        sh 'terraform plan'
+                    }
+                }
+            }
+        }
+
+        // Add more stages as needed for apply, destroy, etc.
+    }
+}
