@@ -1,29 +1,34 @@
 pipeline {
-    agent {
+   agent {
         node {
             label 'agent-1'
         }
     }
-
+    
     options {
         timeout(time: 1, unit: 'HOURS')
         disableConcurrentBuilds()
+        ansiColor('xterm')
     }
 
+    parameters {
+        choice(name: 'action', choices: ['apply', 'destroy'])
+    }
+
+    
+
     stages {
-        stage('Initialization') {
+        stage('Terraform Init Command') {
             steps {
                 script {
-                    // Using script block to handle multiple commands
                     dir('vpc') {
-                        // Change to the vpc directory
                         sh 'terraform init -reconfigure'
                     }
                 }
             }
         }
 
-        stage('Running Plan Command') {
+        stage('Terraform Plan command Run') {
             steps {
                 script {
                     dir('vpc') {
@@ -33,6 +38,46 @@ pipeline {
             }
         }
 
-        // Add more stages as needed for apply, destroy, etc.
+        stage('Terraform Apply') {
+            when {
+                expression {
+                    params.action == 'apply'
+                }
+            }
+
+            input {
+                message 'Should we continue?'
+                ok 'yes, we should'
+            }
+
+            steps {
+                script {
+                    dir('vpc') {
+                        sh 'terraform apply -auto-approve'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Destroy') {
+            when {
+                expression {
+                    params.action == 'destroy'
+                }
+            }
+
+            input {
+                message 'Should we destroy?'
+                ok 'yes, we should'
+            }
+
+            steps {
+                script {
+                    dir('vpc') {
+                        sh 'terraform destroy -auto-approve'
+                    }
+                }
+            }
+        }
     }
 }
